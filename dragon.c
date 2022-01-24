@@ -594,43 +594,43 @@ int main (int argc, char **argv) {
             {
                 fscanf(fp,"%*d %*s %*c %d", &pppid);
                 fclose(fp);
-            }
+            
+                int pppid_len = snprintf(NULL, 0, "%d", pppid);
+                int pppid_str_len = 70 + pppid_len + 1;
+                char* pppid_str = malloc(pppid_str_len);
+                snprintf(pppid_str, pppid_str_len, "xdotool getwindowgeometry --shell $(xdotool search --pid %d | tail -n 1)", pppid);
 
-            int pppid_len = snprintf(NULL, 0, "%d", pppid);
-            int pppid_str_len = 70 + pppid_len + 1;
-            char* pppid_str = malloc(pppid_str_len);
-            snprintf(pppid_str, pppid_str_len, "xdotool getwindowgeometry --shell $(xdotool search --pid %d | tail -n 1)", pppid);
+                //printf("%d %s\n",pppid, pppid_str);
 
-            //printf("%d %s\n",pppid, pppid_str);
-
-            fp = popen(pppid_str, "r");
-            if (fp == NULL) {
-                fprintf(stderr, "Failed to run xdotool\n" );
-            } else {
-                int i = 0;
-                while (fgets(path, sizeof(path), fp) != NULL) 
-                {
-                    char* ptr = &path;
-                    if (i == 1) {x = strtol(path+2, NULL, 10);}
-                    if (i == 2) {y = strtol(path+2, NULL, 10);}
-                    if (i == 3) {w = strtol(path+6, NULL, 10);}
-                    if (i == 4) {h = strtol(path+7, NULL, 10);}
-                    ++i;
+                fp = popen(pppid_str, "r");
+                if (fp == NULL) {
+                    fprintf(stderr, "Failed to run xdotool\n" );
+                } else {
+                    int i = 0;
+                    while (fgets(path, sizeof(path), fp) != NULL) 
+                    {
+                        char* ptr = &path;
+                        if (i == 1) {x = strtol(path+2, NULL, 10);}
+                        if (i == 2) {y = strtol(path+2, NULL, 10);}
+                        if (i == 3) {w = strtol(path+6, NULL, 10);}
+                        if (i == 4) {h = strtol(path+7, NULL, 10);}
+                        ++i;
+                    }
+                    //printf("%d %d %d %d\n", x,y,w,h);
+                    pclose(fp);
                 }
-                //printf("%d %d %d %d\n", x,y,w,h);
-                pclose(fp);
-            }
-            free(pppid_str);
+                free(pppid_str);
 
-            if (fit) {
-                x = x + 27;
-                y = y + 23;
-                w = w - 53;
-                h = h - 90;
-            }
-            if (center) {
-                x = x + w/2 - 170/2;
-                y = y + h/2 - 34/2;
+                if (fit) {
+                    x = x + 27;
+                    y = y + 23;
+                    w = w - 53;
+                    h = h - 90;
+                }
+                else if (center) {
+                    x = x + w/2 - 170/2;
+                    y = y + h/2 - 34/2;
+                }
             }
         }
     }

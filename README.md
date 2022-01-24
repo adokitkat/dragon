@@ -29,7 +29,7 @@ immediately or put where you like.
 
 ### Prerequisites
 
-- Debian/Ubuntu/Pop_OS!: `sudo apt install libgtk-3-0 libgtk-3-dev`
+- Debian/Ubuntu/Pop!_OS: `sudo apt install libgtk-3-0 libgtk-3-dev`
 
 - Others (Arch, Fedora, ...) - equivalent GTK+ 3 packages
 
