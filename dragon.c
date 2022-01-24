@@ -569,7 +569,10 @@ int main (int argc, char **argv) {
     gtk_window_resize(GTK_WINDOW(window), 170, 34);
 
     if ((fit || center) && !center_screen) {
-        if (can_run_cmd("xdotool")) {
+        if (can_run_cmd("xdotool") == false)
+        {
+            fprintf(stderr, "Please install 'xdotool' to use this feature"\n);
+        } else {
             FILE *fp;
             char path[1035];
 
