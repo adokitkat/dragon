@@ -4,18 +4,27 @@ dragon \- lightweight DnD source/target
 .SH SYNOPSIS
 .B dragon
 .OP -x
-.OP -t
-.OP -k
-.OP -p
 .OP -a
 .OP -i
 .OP -T
+.OP -f
+.OP -c
+.OP -C
 .OP -I
 .OP -s
 .OP -v
-FILENAME
+FILENAMES...
 .PP
 .B dragon
+.OP -t
+.OP -k
+.OP -p
+.OP -f
+.OP -c
+.OP -C
+.PP
+.B dragon
+.OP -h
 .OP --help
 .PP
 .B dragon
@@ -29,37 +38,46 @@ to drag out or drop files into, instead.
 .SH OPTIONS
 .TP
 .B -x --and-exit
-exit after a single completed drop.
+exit after a single completed drop
 .TP
 .B -t --target
-act as a target instead of source.
+act as a target instead of source (no FILENAME required)
 .TP
 .B -k --keep
-with --target, keep files to drag out.
+with --target, keep files to drag out
 .TP
 .B -p --print-path
-with --target, print file paths instead of URIs.
+with --target, print file paths instead of URIs
 .TP
 .B -a --all
-drag all files at once.
+drag all files at once
 .TP
 .B -i --icon-only
-only show icons in drag-and-drop windows.
+only show icons in drag-and-drop windows
 .TP
 .B -T --on-top
-make window always-on-top.
+make window always-on-top
+.TP
+.B -f --fit
+open window in the center of the parent window and resize to match it's size
+.TP
+.B -c --center
+open window in the center of the parent window (e.g. terminal)
+.TP
+.B -C --center-screen
+open window in the center of the screen
 .TP
 .B -I --stdin
-read filenames from stdin.
+read filenames from stdin
 .TP
 .B -s --thumb-size
 set thumbnail size (default 96)
 .TP
 .B -v --verbose
-be verbose.
+be verbose
 .TP
-.B --help
-show help.
+.B -h --help
+show help
 .TP
 .B --version
-show version details.
+show version details
