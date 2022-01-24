@@ -2,10 +2,21 @@ PREFIX = $(HOME)/.local
 MANPREFIX = $(PREFIX)/share/man
 NAME = dragon
 
-all: $(NAME)
+SRCS = dragon.c 
+FLAGS = --std=c99 -Wall -Wextra -pedantic
 
-$(NAME): dragon.c
-	$(CC) --std=c99 -Wall $(DEFINES) dragon.c -o $(NAME) `pkg-config --cflags gtk+-3.0` `pkg-config --libs gtk+-3.0`
+.PHONY: all release debug clean install uninstall
+
+all: release
+
+release: $(SRCS)
+	$(CC) $(FLAGS) -O2 $(DEFINES) $^ -o $(NAME) `pkg-config --cflags gtk+-3.0` `pkg-config --libs gtk+-3.0`
+
+debug: $(SRCS)
+	$(CC) $(FLAGS) -g $(DEFINES) $^ -o $(NAME) `pkg-config --cflags gtk+-3.0` `pkg-config --libs gtk+-3.0`
+
+clean: $(NAME)
+	rm -f $(NAME)
 
 install: $(NAME)
 	mkdir -p $(DESTDIR)$(PREFIX)/bin

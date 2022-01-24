@@ -24,8 +24,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#define VERSION "1.1.1"
-
+#define VERSION "1.1.2"
 
 GtkWidget *window;
 GtkWidget *vbox;
@@ -35,11 +34,19 @@ char *progname;
 bool verbose = false;
 int mode = 0;
 int thumb_size = 96;
-bool and_exit;
-bool keep;
+bool and_exit = false;
+bool keep = false;
 bool print_path = false;
 bool icons_only = false;
 bool always_on_top = false;
+
+bool center = false;
+bool center_screen = false;
+bool move = false;
+bool resize = false;
+bool fit = false;
+int x = 0, y = 0,
+    w = 0, h = 0;   
 
 static char *stdin_files;
 
@@ -61,6 +68,59 @@ char** uri_collection;
 int uri_count = 0;
 bool drag_all = false;
 // ---
+
+#include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
+
+static void sigintHandler(int sig) {gtk_main_quit(); exit(EXIT_SUCCESS);};
+
+bool can_run_cmd(const char *cmd) {
+    if (strchr(cmd, '/')) {
+        // if cmd includes a slash, no path search must be performed,
+        // go straight to checking if it's executable
+        return (access(cmd, X_OK) == 0);
+    }
+    const char *path = getenv("PATH");
+    if (!path) {
+        return false;
+    }
+    char *buf = malloc(strlen(path)+strlen(cmd)+3);
+    if (!buf) {
+        return false;
+    }
+    // loop as long as we have stuff to examine in path
+    for (; *path; ++path) {
+        // start from the beginning of the buffer
+        char *p = buf;
+        // copy in buf the current path element
+        for (; *path && *path != ':'; ++path, ++p) {
+            *p = *path;
+        }
+        // empty path entries are treated like "."
+        if (p == buf) {
+            *p++ = '.';
+        }
+        // slash and command name
+        if (p[-1] != '/') {
+            *p++ = '/';
+        }
+        strcpy(p, cmd);
+        // check if we can execute it
+        if (access(buf, X_OK) == 0) {
+            free(buf);
+            return true;
+        }
+        // quit at last cycle
+        if (!*path) {
+            break;
+        }
+    }
+    // not found
+    free(buf);
+    return false;
+}
 
 void add_target_button();
 
@@ -357,6 +417,12 @@ void add_target_button() {
 void target_mode() {
     add_target_button();
     gtk_widget_show_all(window);
+    if ((fit || resize) && !center_screen) {
+        gtk_window_resize(GTK_WINDOW(window), w, h);
+    }
+    if ((fit || move || center) && !center_screen) {
+        gtk_window_move(GTK_WINDOW(window), x, y);
+    }
     gtk_main();
 }
 
@@ -394,28 +460,34 @@ static void readstdin(void) {
 }
 
 int main (int argc, char **argv) {
+    signal(SIGINT, sigintHandler);
+
     bool from_stdin = false;
     stdin_files = malloc(BUFSIZ * 2);
     progname = argv[0];
     for (int i=1; i<argc; i++) {
-        if (strcmp(argv[i], "--help") == 0) {
+        if (strcmp(argv[i], "-h") == 0
+        || strcmp(argv[i], "--help") == 0) {
             mode = MODE_HELP;
             printf("dragon - lightweight DnD source/target\n");
             printf("Usage: %s [OPTION] [FILENAME]\n", argv[0]);
-            printf("  --and-exit,   -x  exit after a single completed drop\n");
-            printf("  --target,     -t  act as a target instead of source\n");
-            printf("  --keep,       -k  with --target, keep files to drag out\n");
-            printf("  --print-path, -p  with --target, print file paths"
+            printf("  --and-exit,      -x  exit after a single completed drop\n");
+            printf("  --target,        -t  act as a target instead of source\n");
+            printf("  --keep,          -k  with --target, keep files to drag out\n");
+            printf("  --print-path,    -p  with --target, print file paths"
                     " instead of URIs\n");
-            printf("  --all,        -a  drag all files at once\n");
-            printf("  --icon-only,  -i  only show icons in drag-and-drop"
+            printf("  --all,           -a  drag all files at once\n");
+            printf("  --icon-only,     -i  only show icons in drag-and-drop"
                     " windows\n");
-            printf("  --on-top,     -T  make window always-on-top\n");
-            printf("  --stdin,      -I  read input from stdin\n");
-            printf("  --thumb-size, -s  set thumbnail size (default 96)\n");
-            printf("  --verbose,    -v  be verbose\n");
-            printf("  --help            show help\n");
-            printf("  --version         show version details\n");
+            printf("  --on-top,        -T  make window always-on-top\n");
+            printf("  --fit,           -f  open window in the center of the parent window and resize to match it's size \n");
+            printf("  --center,        -c  open window in the center of the parent window (e.g. terminal)\n");
+            printf("  --center-screen, -C  open window in the center of the screen\n");
+            printf("  --stdin,         -I  read input from stdin\n");
+            printf("  --thumb-size,    -s  set thumbnail size (default 96)\n");
+            printf("  --verbose,       -v  be verbose\n");
+            printf("  --help           -h  show help\n");
+            printf("  --version            show version details\n");
             exit(0);
         } else if (strcmp(argv[i], "--version") == 0) {
             mode = MODE_VERSION;
@@ -448,6 +520,18 @@ int main (int argc, char **argv) {
         } else if (strcmp(argv[i], "-T") == 0
                 || strcmp(argv[i], "--on-top") == 0) {
             always_on_top = true;
+        } else if (strcmp(argv[i], "-m") == 0
+                || strcmp(argv[i], "--move") == 0) {
+            move = true;
+        } else if (strcmp(argv[i], "-f") == 0
+                || strcmp(argv[i], "--fit") == 0) {
+            fit = true;
+        } else if (strcmp(argv[i], "-c") == 0
+                || strcmp(argv[i], "--center") == 0) {
+            center = true;
+        } else if (strcmp(argv[i], "-C") == 0
+                || strcmp(argv[i], "--center-screen") == 0) {
+            center_screen = true;
         } else if (strcmp(argv[i], "-I") == 0
                 || strcmp(argv[i], "--stdin") == 0) {
             from_stdin = true;
@@ -483,7 +567,7 @@ int main (int argc, char **argv) {
     gtk_window_add_accel_group(GTK_WINDOW(window), accelgroup);
 
     gtk_window_set_title(GTK_WINDOW(window), "Run");
-    gtk_window_set_resizable(GTK_WINDOW(window), FALSE);
+    gtk_window_set_resizable(GTK_WINDOW(window), TRUE);
     gtk_window_set_keep_above(GTK_WINDOW(window), always_on_top);
 
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
@@ -493,6 +577,69 @@ int main (int argc, char **argv) {
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
     gtk_window_set_title(GTK_WINDOW(window), "dragon");
+    gtk_window_resize(GTK_WINDOW(window), 170, 34);
+
+    if ((fit || center) && !center_screen) {
+        if (can_run_cmd("xdotool")) {
+            FILE *fp;
+            char path[1035];
+
+            char proc[81];
+            pid_t ppid = getppid();
+            pid_t pppid = -1;
+
+            snprintf(proc, 81, "/proc/%d/stat", (int)getppid());
+            fp = fopen(proc, "r");
+            if (fp)
+            {
+                fscanf(fp,"%*d %*s %*c %d", &pppid);
+                fclose(fp);
+            }
+
+            int pppid_len = snprintf(NULL, 0, "%d", pppid);
+            int pppid_str_len = 70 + pppid_len + 1;
+            char* pppid_str = malloc(pppid_str_len);
+            snprintf(pppid_str, pppid_str_len, "xdotool getwindowgeometry --shell $(xdotool search --pid %d | tail -n 1)", pppid);
+
+            //printf("%d %s\n",pppid, pppid_str);
+
+            fp = popen(pppid_str, "r");
+            if (fp == NULL) {
+                fprintf(stderr, "Failed to run xdotool\n" );
+            } else {
+                int i = 0;
+                while (fgets(path, sizeof(path), fp) != NULL) 
+                {
+                    char* ptr = &path;
+                    if (i == 1) {x = strtol(path+2, NULL, 10);}
+                    if (i == 2) {y = strtol(path+2, NULL, 10);}
+                    if (i == 3) {w = strtol(path+6, NULL, 10);}
+                    if (i == 4) {h = strtol(path+7, NULL, 10);}
+                    ++i;
+                }
+                //printf("%d %d %d %d\n", x,y,w,h);
+                pclose(fp);
+            }
+            free(pppid_str);
+
+            if (fit) {
+                x = x + 27;
+                y = y + 23;
+                w = w - 53;
+                h = h - 90;
+            }
+            if (center) {
+                x = x + w/2 - 170/2;
+                y = y + h/2 - 34/2;
+            }
+        }
+    }
+
+    if (center_screen) {
+        gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
+        fit = false;
+    }
+
 
     if (mode == MODE_TARGET) {
         target_mode();
@@ -517,6 +664,13 @@ int main (int argc, char **argv) {
     }
 
     gtk_widget_show_all(window);
+    
+    if ((fit || resize) && !center_screen) {
+        gtk_window_resize(GTK_WINDOW(window), w, h);
+    }
+    if ((fit || move || center) && !center_screen) {
+        gtk_window_move(GTK_WINDOW(window), x, y);
+    }
 
     gtk_main();
 

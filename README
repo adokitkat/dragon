@@ -22,10 +22,22 @@ If you want to keep the files you drag in around for a while, use:
 and each file you drop becomes its own draggable button, which you can
 drag elsewhere later.
 
-Installing
-----------
-Just run `make` to compile dragon and get an executable you can run
+## Building
+
+Just run `make` to compile dragon and get an executable you can run 
 immediately or put where you like.
+
+### Prerequisites
+
+- Debian/Ubuntu/Pop_OS!: `sudo apt install libgtk-3-0 libgtk-3-dev`
+
+- Others (Arch, Fedora, ...) - equivalent GTK+ 3 packages
+
+#### Optional
+
+- `xdotool` for window size and position manipulation
+
+## Installing
 
 To install, run `make install`, which will put it into ~/.local/bin by
 default. If you want a different destination, run `make
