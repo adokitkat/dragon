@@ -396,7 +396,8 @@ drag_data_received (GtkWidget          *widget,
 void add_target_button() {
     GtkWidget *label = gtk_button_new();
     gtk_button_set_label(GTK_BUTTON(label), "Drag something here...");
-    gtk_container_add(GTK_CONTAINER(vbox), label);
+    gtk_button_set_alignment(label, 0.5, 0.5);
+    gtk_box_pack_start(GTK_CONTAINER(vbox),label, 1, 1, 0); 
     GtkTargetList *targetlist = gtk_drag_dest_get_target_list(GTK_WIDGET(label));
     if (targetlist)
         gtk_target_list_ref(targetlist);
@@ -412,18 +413,6 @@ void add_target_button() {
             G_CALLBACK(drag_drop), NULL);
     g_signal_connect(GTK_WIDGET(label), "drag-data-received",
             G_CALLBACK(drag_data_received), NULL);
-}
-
-void target_mode() {
-    add_target_button();
-    gtk_widget_show_all(window);
-    if ((fit || resize) && !center_screen) {
-        gtk_window_resize(GTK_WINDOW(window), w, h);
-    }
-    if ((fit || move || center) && !center_screen) {
-        gtk_window_move(GTK_WINDOW(window), x, y);
-    }
-    gtk_main();
 }
 
 void make_btn(char *filename) {
@@ -638,33 +627,33 @@ int main (int argc, char **argv) {
     if (center_screen) {
         gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ALWAYS);
         fit = false;
+        center = false;
     }
 
 
     if (mode == MODE_TARGET) {
-        target_mode();
-        exit(0);
+        add_target_button();
+    } else {
+        if (from_stdin)
+            uri_collection = malloc(sizeof(char*) * (MAX_SIZE  + 1));
+        else if (drag_all)
+            uri_collection = malloc(sizeof(char*) * ((argc > MAX_SIZE ? argc : MAX_SIZE) + 1));
+
+        for (int i=1; i<argc; i++) {
+            if (argv[i][0] != '-' && argv[i][0] != '\0')
+            make_btn(argv[i]);
+        }
+        if (from_stdin)
+            readstdin();
+
+        if (!uri_count) {
+            printf("Usage: %s [OPTIONS] FILENAME\n", progname);
+            exit(0);
+        }
     }
-
-    if (from_stdin)
-        uri_collection = malloc(sizeof(char*) * (MAX_SIZE  + 1));
-    else if (drag_all)
-        uri_collection = malloc(sizeof(char*) * ((argc > MAX_SIZE ? argc : MAX_SIZE) + 1));
-
-    for (int i=1; i<argc; i++) {
-        if (argv[i][0] != '-' && argv[i][0] != '\0')
-           make_btn(argv[i]);
-    }
-    if (from_stdin)
-        readstdin();
-
-    if (!uri_count) {
-        printf("Usage: %s [OPTIONS] FILENAME\n", progname);
-        exit(0);
-    }
-
+        
     gtk_widget_show_all(window);
-    
+
     if ((fit || resize) && !center_screen) {
         gtk_window_resize(GTK_WINDOW(window), w, h);
     }
@@ -674,5 +663,5 @@ int main (int argc, char **argv) {
 
     gtk_main();
 
-    return 0;
+    exit(0);
 }
