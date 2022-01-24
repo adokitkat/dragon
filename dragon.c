@@ -74,7 +74,10 @@ bool drag_all = false;
 #include <string.h>
 #include <stdlib.h>
 
-static void sigintHandler(int sig) {gtk_main_quit(); exit(EXIT_SUCCESS);};
+static void sigintHandler(int sig) {
+    gtk_main_quit();
+    exit(EXIT_SUCCESS);
+}
 
 bool can_run_cmd(const char *cmd) {
     if (strchr(cmd, '/')) {
@@ -396,8 +399,7 @@ drag_data_received (GtkWidget          *widget,
 void add_target_button() {
     GtkWidget *label = gtk_button_new();
     gtk_button_set_label(GTK_BUTTON(label), "Drag something here...");
-    gtk_button_set_alignment(label, 0.5, 0.5);
-    gtk_box_pack_start(GTK_CONTAINER(vbox),label, 1, 1, 0); 
+    gtk_box_pack_start(GTK_BOX(vbox),label, 1, 1, 0); 
     GtkTargetList *targetlist = gtk_drag_dest_get_target_list(GTK_WIDGET(label));
     if (targetlist)
         gtk_target_list_ref(targetlist);
@@ -571,13 +573,11 @@ int main (int argc, char **argv) {
     if ((fit || center) && !center_screen) {
         if (can_run_cmd("xdotool") == false)
         {
-            fprintf(stderr, "Please install 'xdotool' to use this feature"\n);
+            fprintf(stderr, "Please install 'xdotool' to use this feature\n");
         } else {
             FILE *fp;
             char path[1035];
-
             char proc[81];
-            pid_t ppid = getppid();
             pid_t pppid = -1;
 
             snprintf(proc, 81, "/proc/%d/stat", (int)getppid());
@@ -601,7 +601,6 @@ int main (int argc, char **argv) {
                     int i = 0;
                     while (fgets(path, sizeof(path), fp) != NULL) 
                     {
-                        char* ptr = &path;
                         if (i == 1) {x = strtol(path+2, NULL, 10);}
                         if (i == 2) {y = strtol(path+2, NULL, 10);}
                         if (i == 3) {w = strtol(path+6, NULL, 10);}
