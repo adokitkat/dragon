@@ -568,7 +568,7 @@ int main (int argc, char **argv) {
     gtk_container_add(GTK_CONTAINER(window), vbox);
 
     gtk_window_set_title(GTK_WINDOW(window), "dragon");
-    gtk_window_resize(GTK_WINDOW(window), 170, 34);
+    gtk_window_resize(GTK_WINDOW(window), 200, 200);
 
     if ((fit || center) && !center_screen) {
         if (can_run_cmd("xdotool") == false)
@@ -611,17 +611,6 @@ int main (int argc, char **argv) {
                     pclose(fp);
                 }
                 free(pppid_str);
-
-                if (fit) {
-                    x = x + 27;
-                    y = y + 23;
-                    w = w - 53;
-                    h = h - 90;
-                }
-                else if (center) {
-                    x = x + w/2 - 170/2;
-                    y = y + h/2 - 34/2;
-                }
             }
         }
     }
@@ -656,10 +645,25 @@ int main (int argc, char **argv) {
         
     gtk_widget_show_all(window);
 
+    int a, b;
+    gtk_window_get_size(GTK_WINDOW(window), &a, &b);
+
     if ((fit || resize) && !center_screen) {
+        if (fit) {
+            w = w - 53;
+            h = h - 90;
+        }
         gtk_window_resize(GTK_WINDOW(window), w, h);
     }
     if ((fit || move || center) && !center_screen) {
+        if (fit) {
+            x = x + 27;
+            y = y + 23;
+        }
+        else if (center) {
+            x = x + w/2 - a/2;
+            y = y + h/2 - b/2;
+        }
         gtk_window_move(GTK_WINDOW(window), x, y);
     }
 
